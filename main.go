@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -29,12 +28,6 @@ var client *mongo.Client
 
 func init() {
 	var err error
-
-	err = godotenv.Load()
-
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 
 	uri := os.Getenv("urlMongoDb")
 
