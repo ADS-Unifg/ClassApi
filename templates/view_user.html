@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View User Data</title>
+    <script>
+        async function fetchUserData() {
+            const userId = new URLSearchParams(window.location.search).get('id');
+            if (!userId) {
+                document.getElementById('user-data').innerText = 'User ID is required.';
+                return;
+            }
+            try {
+                const response = await fetch(`/user?id=${userId}`);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                document.getElementById('user-data').innerText = JSON.stringify(data.user, null, 2);
+                document.getElementById('user-photo').src = data.photoURL;
+            } catch (error) {
+                document.getElementById('user-data').innerText = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</head>
+<body onload="fetchUserData()">
+    <h1>User Data</h1>
+    <pre id="user-data">Loading...</pre>
+    <img id="user-photo" alt="User Photo" style="display: block; margin-top: 20px; max-width: 100%;">
+</body>
+</html>
