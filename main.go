@@ -161,7 +161,10 @@ func servePhotoHandler(c *gin.Context) {
 
 func serveAllUsersHandler(c *gin.Context) {
 	collection := client.Database("user").Collection("userData")
-	cursor, err := collection.Find(context.Background(), bson.M{})
+
+	opts := options.Find().SetSort(bson.D{{Key: "name", Value: 1}})
+
+	cursor, err := collection.Find(context.Background(), bson.M{}, opts)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users"})
 		return
@@ -176,7 +179,6 @@ func serveAllUsersHandler(c *gin.Context) {
 
 	for i := range users {
 		users[i].Photo = nil
-
 	}
 
 	c.JSON(http.StatusOK, users)
