@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Form</title>
-    <link rel="stylesheet" href="form.css">
+    <link rel="stylesheet" href="../public/form.css">
 </head>
 <body>
     <form action="/upload" method="post" enctype="multipart/form-data">
+        <p>Coloque o link completo das redes sociais exemplo: "https://www.instagram.com/username"</p>
         <h1>Upload Form</h1>
         <label for="name">Name:</label>
         <input type="text" id="name" name="name" required><br>
@@ -24,11 +25,11 @@
         <label for="instagram">Instagram:</label>
         <input type="text" id="instagram" name="instagram" required><br>
 
-        <label for="photo">Photo:</label>
+        <label for="photo">Foto de Perfil:</label>
         <input type="file" id="photo" name="photo" required><br><br>
 
         <input type="submit" value="Upload">
     </form>
-    <a href="/view_user">View User Data</a>
+    <!--<a href="/view_user">View User Data</a> -->
 </body>
 </html>
