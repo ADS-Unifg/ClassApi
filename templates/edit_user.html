@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Usuário</title>
+</head>
+<body>
+    <h1>Editar Usuário</h1>
+    <form action="/edit_user" method="POST" enctype="multipart/form-data">
+        <label for="idaluno">ID Aluno:</label>
+        <input type="number" id="idaluno" name="idaluno" required><br><br>
+
+        <label for="name">Nome:</label>
+        <input type="text" id="name" name="name"><br><br>
+
+        <label for="apelido">Apelido:</label>
+        <input type="text" id="apelido" name="apelido"><br><br>
+
+        <label for="linkedin">LinkedIn:</label>
+        <input type="text" id="linkedin" name="linkedin"><br><br>
+
+        <label for="github">GitHub:</label>
+        <input type="text" id="github" name="github"><br><br>
+
+        <label for="instagram">Instagram:</label>
+        <input type="text" id="instagram" name="instagram"><br><br>
+
+        <label for="photo">Foto:</label>
+        <input type="file" id="photo" name="photo"><br><br>
+
+        <button type="submit">Salvar Alterações</button>
+    </form>
+</body>
+</html>

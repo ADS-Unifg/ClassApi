@@ -72,8 +72,64 @@ func main() {
 	r.GET("/photo/:id", servePhotoHandler)
 	r.GET("/all_users", serveAllUsersHandler)
 
+	r.GET("/edit_user", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "edit_user.html", nil)
+	})
+	r.POST("/edit_user", editUserHandler)
+
 	r.Run(":8080")
 }
+
+func editUserHandler(c *gin.Context) {
+
+	idaluno, err := strconv.Atoi(c.PostForm("idaluno"))
+	if err != nil || idaluno < 1 || idaluno > 40 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "IDAluno deve ser um número entre 1 e 45"})
+		return
+	}
+
+	collection := client.Database("user").Collection("userData")
+
+	var existingUser User
+	err = collection.FindOne(context.Background(), bson.M{"idaluno": idaluno}).Decode(&existingUser)
+	if err == mongo.ErrNoDocuments {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar o usuário"})
+		return
+	}
+
+	updatedData := bson.M{
+		"$set": bson.M{
+			"name":      c.PostForm("name"),
+			"apelido":   c.PostForm("apelido"),
+			"linkedin":  c.PostForm("linkedin"),
+			"github":    c.PostForm("github"),
+			"instagram": c.PostForm("instagram"),
+		},
+	}
+
+	file, _, err := c.Request.FormFile("photo")
+	if err == nil {
+		defer file.Close()
+		photo, err := io.ReadAll(file)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao ler o arquivo"})
+			return
+		}
+		updatedData["$set"].(bson.M)["photo"] = photo
+	}
+
+	_, err = collection.UpdateOne(context.Background(), bson.M{"idaluno": idaluno}, updatedData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao atualizar o documento"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Usuário atualizado com sucesso"})
+}
+
 func uploadHandler(c *gin.Context) {
 	idaluno, err := strconv.Atoi(c.PostForm("idaluno"))
 	if err != nil || idaluno < 1 || idaluno > 40 {
@@ -179,7 +235,6 @@ func servePhotoHandler(c *gin.Context) {
 
 	c.Data(http.StatusOK, "image/jpeg", user.Photo)
 }
-
 func serveAllUsersHandler(c *gin.Context) {
 	collection := client.Database("user").Collection("userData")
 
@@ -200,6 +255,7 @@ func serveAllUsersHandler(c *gin.Context) {
 
 	for i := range users {
 		users[i].Photo = nil
+		users[i].Idaluno = 0
 	}
 
 	c.JSON(http.StatusOK, users)
