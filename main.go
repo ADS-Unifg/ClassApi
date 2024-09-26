@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,6 +17,7 @@ import (
 
 type User struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	Idaluno   int                `bson:"idaluno"`
 	Name      string             `bson:"name"`
 	Apelido   string             `bson:"apelido"`
 	Linkedin  string             `bson:"linkedin"`
@@ -30,6 +32,7 @@ func init() {
 	var err error
 
 	uri := os.Getenv("urlMongoDb")
+	//uri := "mongodb://localhost:27017"
 
 	client, err = mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 
@@ -71,22 +74,41 @@ func main() {
 
 	r.Run(":8080")
 }
-
 func uploadHandler(c *gin.Context) {
+	idaluno, err := strconv.Atoi(c.PostForm("idaluno"))
+	if err != nil || idaluno < 1 || idaluno > 40 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "IDAluno deve ser um número entre 1 e 45"})
+		return
+	}
+
+	collection := client.Database("user").Collection("userData")
+	var existingUser User
+	err = collection.FindOne(context.Background(), bson.M{"idaluno": idaluno}).Decode(&existingUser)
+	if err == nil {
+
+		c.JSON(http.StatusConflict, gin.H{"error": "IDAluno já está em uso. Escolha outro."})
+		return
+	} else if err != mongo.ErrNoDocuments {
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao verificar IDAluno"})
+		return
+	}
+
 	file, _, err := c.Request.FormFile("photo")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to retrieve file"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Erro ao carregar o arquivo"})
 		return
 	}
 	defer file.Close()
 
 	photo, err := io.ReadAll(file)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to read file"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao ler o arquivo"})
 		return
 	}
 
 	user := User{
+		Idaluno:   idaluno,
 		Name:      c.PostForm("name"),
 		Apelido:   c.PostForm("apelido"),
 		Linkedin:  c.PostForm("linkedin"),
@@ -95,14 +117,13 @@ func uploadHandler(c *gin.Context) {
 		Photo:     photo,
 	}
 
-	collection := client.Database("user").Collection("userData")
 	result, err := collection.InsertOne(context.Background(), user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert document"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha ao inserir o documento"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully", "id": result.InsertedID})
+	c.JSON(http.StatusOK, gin.H{"message": "Arquivo enviado com sucesso", "id": result.InsertedID})
 }
 
 func serveUserDataHandler(c *gin.Context) {
