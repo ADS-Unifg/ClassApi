@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +16,7 @@ import (
 
 type User struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	Idaluno   int                `bson:"idaluno"`
+	Ra        int                `bson:"ra"`
 	Name      string             `bson:"name"`
 	Apelido   string             `bson:"apelido"`
 	Linkedin  string             `bson:"linkedin"`
@@ -31,8 +30,8 @@ var client *mongo.Client
 func init() {
 	var err error
 
-	uri := os.Getenv("urlMongoDb")
-	//uri := "mongodb://localhost:27017"
+	//uri := os.Getenv("urlMongoDb")
+	uri := "mongodb://localhost:27017"
 
 	client, err = mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 
@@ -63,9 +62,6 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "form.html", nil)
 	})
-	r.GET("/view_user", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "view_user.html", nil)
-	})
 
 	r.POST("/upload", uploadHandler)
 	r.GET("/user", serveUserDataHandler)
@@ -82,16 +78,16 @@ func main() {
 
 func editUserHandler(c *gin.Context) {
 
-	idaluno, err := strconv.Atoi(c.PostForm("idaluno"))
-	if err != nil || idaluno < 1 || idaluno > 40 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "IDAluno deve ser um número entre 1 e 45"})
+	ra, err := strconv.Atoi(c.PostForm("ra"))
+	if err != nil || ra < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "RA deve ser um número válido"})
 		return
 	}
 
 	collection := client.Database("user").Collection("userData")
 
 	var existingUser User
-	err = collection.FindOne(context.Background(), bson.M{"idaluno": idaluno}).Decode(&existingUser)
+	err = collection.FindOne(context.Background(), bson.M{"ra": ra}).Decode(&existingUser)
 	if err == mongo.ErrNoDocuments {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
 		return
@@ -121,7 +117,7 @@ func editUserHandler(c *gin.Context) {
 		updatedData["$set"].(bson.M)["photo"] = photo
 	}
 
-	_, err = collection.UpdateOne(context.Background(), bson.M{"idaluno": idaluno}, updatedData)
+	_, err = collection.UpdateOne(context.Background(), bson.M{"ra": ra}, updatedData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao atualizar o documento"})
 		return
@@ -131,22 +127,32 @@ func editUserHandler(c *gin.Context) {
 }
 
 func uploadHandler(c *gin.Context) {
-	idaluno, err := strconv.Atoi(c.PostForm("idaluno"))
-	if err != nil || idaluno < 1 || idaluno > 40 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "IDAluno deve ser um número entre 1 e 45"})
+	collection := client.Database("user").Collection("userData")
+
+	userCount, err := collection.CountDocuments(context.Background(), bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao contar os usuários"})
 		return
 	}
 
-	collection := client.Database("user").Collection("userData")
-	var existingUser User
-	err = collection.FindOne(context.Background(), bson.M{"idaluno": idaluno}).Decode(&existingUser)
-	if err == nil {
+	if userCount >= 42 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Limite de 42 usuários atingido. Não é possível adicionar mais usuários."})
+		return
+	}
 
-		c.JSON(http.StatusConflict, gin.H{"error": "IDAluno já está em uso. Escolha outro."})
+	ra, err := strconv.Atoi(c.PostForm("ra"))
+	if err != nil || ra < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "RA deve ser um número válido"})
+		return
+	}
+
+	var existingUser User
+	err = collection.FindOne(context.Background(), bson.M{"ra": ra}).Decode(&existingUser)
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "RA já está em uso. Escolha outro."})
 		return
 	} else if err != mongo.ErrNoDocuments {
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao verificar IDAluno"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao verificar RA"})
 		return
 	}
 
@@ -164,7 +170,7 @@ func uploadHandler(c *gin.Context) {
 	}
 
 	user := User{
-		Idaluno:   idaluno,
+		Ra:        ra,
 		Name:      c.PostForm("name"),
 		Apelido:   c.PostForm("apelido"),
 		Linkedin:  c.PostForm("linkedin"),
@@ -205,6 +211,7 @@ func serveUserDataHandler(c *gin.Context) {
 
 	photoURL := "/photo/" + id
 	user.Photo = nil
+	user.Ra = 0
 
 	c.JSON(http.StatusOK, gin.H{
 		"user":     user,
@@ -255,7 +262,7 @@ func serveAllUsersHandler(c *gin.Context) {
 
 	for i := range users {
 		users[i].Photo = nil
-		users[i].Idaluno = 0
+		users[i].Ra = 0
 	}
 
 	c.JSON(http.StatusOK, users)
