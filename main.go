@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -31,8 +32,8 @@ var client *mongo.Client
 func init() {
 	var err error
 
-	//uri := os.Getenv("urlMongoDb")
-	uri := "mongodb://localhost:27017"
+	uri := os.Getenv("urlMongoDb")
+	//uri := "mongodb://localhost:27017"
 
 	client, err = mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 
