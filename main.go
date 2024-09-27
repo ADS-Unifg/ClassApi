@@ -17,6 +17,7 @@ import (
 type User struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	Ra        int                `bson:"ra"`
+	Password  string             `bson:"password"`
 	Name      string             `bson:"name"`
 	Apelido   string             `bson:"apelido"`
 	Linkedin  string             `bson:"linkedin"`
@@ -73,16 +74,23 @@ func main() {
 	})
 	r.POST("/edit_user", editUserHandler)
 
+	r.GET("/delete_user", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "delete_user.html", nil)
+	})
+
+	r.POST("/delete_user", deleteUserHandler)
+
 	r.Run(":8080")
 }
-
-func editUserHandler(c *gin.Context) {
-
-	ra, err := strconv.Atoi(c.PostForm("ra"))
-	if err != nil || ra < 1 {
+func deleteUserHandler(c *gin.Context) {
+	raStr := c.PostForm("ra")
+	ra, err := strconv.Atoi(raStr)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "RA deve ser um número válido"})
 		return
 	}
+
+	submittedPassword := c.PostForm("password")
 
 	collection := client.Database("user").Collection("userData")
 
@@ -93,6 +101,52 @@ func editUserHandler(c *gin.Context) {
 		return
 	} else if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar o usuário"})
+		return
+	}
+
+	if existingUser.Password != submittedPassword {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Senha incorreta"})
+		return
+	}
+
+	result, err := collection.DeleteOne(context.Background(), bson.M{"ra": ra})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao tentar deletar o usuário"})
+		return
+	}
+
+	if result.DeletedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Usuário deletado com sucesso"})
+}
+
+func editUserHandler(c *gin.Context) {
+
+	ra, err := strconv.Atoi(c.PostForm("ra"))
+	if err != nil || ra < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "RA deve ser um número válido"})
+		return
+	}
+
+	submittedPassword := c.PostForm("password")
+
+	collection := client.Database("user").Collection("userData")
+
+	var existingUser User
+	err = collection.FindOne(context.Background(), bson.M{"ra": ra}).Decode(&existingUser)
+	if err == mongo.ErrNoDocuments {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar o usuário"})
+		return
+	}
+
+	if existingUser.Password != submittedPassword {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Senha incorreta"})
 		return
 	}
 
@@ -141,6 +195,7 @@ func uploadHandler(c *gin.Context) {
 	}
 
 	ra, err := strconv.Atoi(c.PostForm("ra"))
+
 	if err != nil || ra < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "RA deve ser um número válido"})
 		return
@@ -171,6 +226,7 @@ func uploadHandler(c *gin.Context) {
 
 	user := User{
 		Ra:        ra,
+		Password:  c.PostForm("password"),
 		Name:      c.PostForm("name"),
 		Apelido:   c.PostForm("apelido"),
 		Linkedin:  c.PostForm("linkedin"),
@@ -212,6 +268,7 @@ func serveUserDataHandler(c *gin.Context) {
 	photoURL := "/photo/" + id
 	user.Photo = nil
 	user.Ra = 0
+	user.Password = "sai fora"
 
 	c.JSON(http.StatusOK, gin.H{
 		"user":     user,
@@ -263,6 +320,7 @@ func serveAllUsersHandler(c *gin.Context) {
 	for i := range users {
 		users[i].Photo = nil
 		users[i].Ra = 0
+		users[i].Password = "Sai fora"
 	}
 
 	c.JSON(http.StatusOK, users)

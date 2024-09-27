@@ -10,8 +10,15 @@
     <form action="/edit_user" method="post" enctype="multipart/form-data">
         <p>Coloque o link completo das redes sociais exemplo: <strong>  "https://www.instagram.com/username"</strong></p>
         <h1>Editar Usuário</h1>
+        <hr>
+        <h3>Validação</h3>
+        <p>Coloque o Ra e senha do user para poder editar</p>
         <label for="idaluno">RA:</label>
         <input type="number" id="ra" name="ra" min="1" max="99999999999" required><br>
+
+        <label for="idaluno">Password:</label>
+        <input type="text" id="password" name="password" required><br>
+        <hr>
 
         <label for="name">Name:</label>
         <input type="text" id="name" name="name" required><br>

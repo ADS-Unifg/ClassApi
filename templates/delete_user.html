@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deletar Usuário</title>
+</head>
+<body>
+    <h1>Deletar Usuário</h1>
+    <form action="/delete_user" method="POST">
+        <label for="ra">Digite o RA:</label>
+        <input type="number" id="ra" name="ra" required>
+
+        <label for="password">password:</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Deletar Usuário</button>
+    </form>
+    <div id="message"></div>
+
+    <script>
+        const messageDiv = document.getElementById('message');
+        
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('message')) {
+            messageDiv.innerText = urlParams.get('message');
+        }
+    </script>
+</body>
+</html>
