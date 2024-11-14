@@ -81,7 +81,7 @@ func main() {
 
 	r.POST("/delete_user", deleteUserHandler)
 
-	r.Run(":8080")
+	r.Run(":8000")
 }
 
 func deleteUserHandler(c *gin.Context) {
