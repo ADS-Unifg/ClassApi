@@ -127,7 +127,6 @@ func deleteUserHandler(c *gin.Context) {
 }
 
 func editUserHandler(c *gin.Context) {
-
 	ra, err := strconv.Atoi(c.PostForm("ra"))
 	if err != nil || ra < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "RA deve ser um número válido"})
@@ -135,7 +134,6 @@ func editUserHandler(c *gin.Context) {
 	}
 
 	submittedPassword := c.PostForm("password")
-
 	collection := client.Database("user").Collection("userData")
 
 	var existingUser User
@@ -166,6 +164,14 @@ func editUserHandler(c *gin.Context) {
 	file, _, err := c.Request.FormFile("photo")
 	if err == nil {
 		defer file.Close()
+
+		// Verificar o tamanho do arquivo
+		fileSize := c.Request.ContentLength
+		if fileSize > 2*1024*1024 { // 2MB = 2 * 1024 * 1024 bytes
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Imagem maior que 2MB. Envie uma imagem menor."})
+			return
+		}
+
 		photo, err := io.ReadAll(file)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao ler o arquivo"})
@@ -198,7 +204,6 @@ func uploadHandler(c *gin.Context) {
 	}
 
 	ra, err := strconv.Atoi(c.PostForm("ra"))
-
 	if err != nil || ra < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "RA deve ser um número válido"})
 		return
@@ -220,6 +225,13 @@ func uploadHandler(c *gin.Context) {
 		return
 	}
 	defer file.Close()
+
+	// Verificar o tamanho do arquivo
+	fileSize := c.Request.ContentLength
+	if fileSize > 2*1024*1024 { // 2MB = 2 * 1024 * 1024 bytes
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Imagem maior que 2MB. Envie uma imagem menor."})
+		return
+	}
 
 	photo, err := io.ReadAll(file)
 	if err != nil {
