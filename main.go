@@ -83,9 +83,11 @@ func main() {
 
 	r.Run(":8080")
 }
+
 func deleteUserHandler(c *gin.Context) {
 	raStr := c.PostForm("ra")
 	ra, err := strconv.Atoi(raStr)
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "RA deve ser um número válido"})
 		return

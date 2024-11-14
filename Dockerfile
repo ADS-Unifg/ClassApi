@@ -1,13 +1,25 @@
-# Dockerfile
 
 FROM golang:1.23.0
 
-RUN apt-get update && apt-get install -y gcc
 
 WORKDIR /app
 
+
+COPY go.mod ./
+COPY go.sum ./
+
+
+RUN apt-get update && apt-get install -y gcc
+RUN go mod download
+
+
 COPY . .
 
-RUN go build -o out
+# Compilar o binário da aplicação
+RUN go build -o main
 
-CMD ["./out"]
+# Expor a porta em que sua aplicação roda
+EXPOSE 8080
+
+# Executar o binário
+CMD ["./main"]
